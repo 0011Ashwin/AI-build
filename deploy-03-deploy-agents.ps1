@@ -325,7 +325,7 @@ foreach ($agent in $agents) {
     $verifyCount++
     $serviceName = $agent.Name
     
-    Write-Host "  [$verifyCount/$totalAgents] $serviceName: " -NoNewline
+    Write-Host "  [$verifyCount/$totalAgents] ${serviceName}: " -NoNewline
     
     $serviceInfo = (gcloud run services describe $serviceName --region=$Region --format="value(status.conditions[0].status)" --project=$ProjectID 2>&1 | Out-String).Trim()
     
