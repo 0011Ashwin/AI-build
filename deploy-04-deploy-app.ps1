@@ -106,10 +106,8 @@ Write-Info "Task: Build context $($config.AppRoot) -> $($config.RegistryURL)/$($
 
 try {
     $imageName = "$($config.RegistryURL)/$($config.AppName):latest"
-    Write-Host "  Starting Cloud Build... (this may take 2-3 minutes)" -ForegroundColor Gray
-    
-    # Use gcloud builds submit for reliable cloud-side builds
-    $output = (gcloud builds submit --tag $imageName "$($config.AppRoot)" --project=$ProjectID --quiet 2>&1 | Out-String).Trim()
+    # Use gcloud builds submit from the root context to ensure consistency
+    $output = (gcloud builds submit --tag $imageName --file "$($config.AppRoot)/Dockerfile" . --project=$ProjectID --quiet 2>&1 | Out-String).Trim()
     
     if ($LASTEXITCODE -ne 0) {
         Write-Host "`nCloud Build Error Output:" -ForegroundColor Red
