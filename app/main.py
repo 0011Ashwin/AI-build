@@ -5,9 +5,12 @@ Orchestrates multi-agent audit system on Google Cloud
 
 import os
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Dict, Any
 from datetime import datetime
+
 
 # Shared modules - wrapped in try/except so startup never crashes
 try:
@@ -64,6 +67,18 @@ else:
     state_manager = None
     bias_calculator = None
     report_generator = None
+
+# Serve static frontend files
+frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
+if os.path.exists(frontend_path):
+    app.mount("/static", StaticFiles(directory=frontend_path), name="static")
+
+
+@app.get("/")
+async def serve_ui():
+    """Serve the main UI"""
+    index_path = os.path.join(os.path.dirname(__file__), "frontend", "index.html")
+    return FileResponse(index_path)
 
 
 @app.get("/health")
