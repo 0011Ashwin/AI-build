@@ -4,6 +4,7 @@ Legal Researcher ADK Application
 
 from google.adk import adk_app
 from agent import LegalResearcherAgent
+import os
 import json
 
 
@@ -37,4 +38,5 @@ def create_adk_app():
 
 if __name__ == "__main__":
     app = create_adk_app()
-    app.run()
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
