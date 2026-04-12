@@ -105,11 +105,6 @@ if (-not (Get-Command gcloud -ErrorAction SilentlyContinue)) {
 }
 Write-Success "Google Cloud SDK found"
 
-if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-    Write-FatalError "Docker not found. Please install Docker Desktop"
-}
-Write-Success "Docker found"
-
 # Set project
 Write-Info "Setting project to: $ProjectID"
 $output = (gcloud config set project $ProjectID 2>&1 | Out-String).Trim()
@@ -161,7 +156,7 @@ foreach ($role in $roles) {
 Write-Success "Service account configured with required roles"
 
 # ============================================================================
-# AUTHENTICATE DOCKER WITH ARTIFACT REGISTRY
+# SETUP ARTIFACT REGISTRY
 # ============================================================================
 
 Write-Section "Setting Up Artifact Registry"
@@ -178,15 +173,16 @@ if ($LASTEXITCODE -ne 0) {
     Write-Warning "Artifact Registry repository already exists"
 }
 
-Write-Info "Configuring Docker authentication..."
-$output = (gcloud auth configure-docker "$($Region)-docker.pkg.dev" --quiet 2>&1 | Out-String).Trim()
-Write-Success "Docker authentication configured"
 
 # ============================================================================
-# BUILD DOCKER IMAGES
+# BUILD & PUSH IMAGES (USING CLOUD BUILD)
 # ============================================================================
 
-Write-Section "Building Agent Docker Images"
+Write-Section "Building & Pushing Images (via Cloud Build)"
+
+Write-Info "Using Google Cloud Build for reliable cloud-native builds."
+Write-Info "This bypasses local Docker requirements and network issues."
+Write-Info ""
 
 $agents = $config.Agents
 if ($DeployAgent -ne "all") {
@@ -198,60 +194,32 @@ $builtCount = 0
 
 foreach ($agent in $agents) {
     $builtCount++
-    Write-Subsection "[$builtCount/$totalAgents] Building $($agent.Name)"
+    Write-Subsection "[$builtCount/$totalAgents] Building & Pushing $($agent.Name)"
     
     $imageName = "$($config.RegistryURL)/$($agent.Name):latest"
-    Write-Info "Image: $imageName"
+    Write-Info "Task: Build context $($agent.Path) -> $imageName"
     
     try {
-        $output = (docker build -t $imageName -f "$($agent.Path)/Dockerfile" $($agent.Path) 2>&1 | Out-String).Trim()
+        Write-Host "  Starting Cloud Build... (this may take 2-3 minutes)" -ForegroundColor Gray
+        
+        # Use gcloud builds submit for reliable cloud-side builds
+        $output = (gcloud builds submit --tag $imageName "$($agent.Path)" --project=$ProjectID --quiet 2>&1 | Out-String).Trim()
         
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "`nDocker Build Error Output:" -ForegroundColor Red
+            Write-Host "`nCloud Build Error Output:" -ForegroundColor Red
             Write-Host $output -ForegroundColor Gray
-            Write-FatalError "Failed to build image for $($agent.Name)"
+            Write-FatalError "Failed to build image for $($agent.Name) via Cloud Build"
         }
         
-        Write-Success "Image built successfully"
+        Write-Success "Agent image built and pushed successfully"
         
     } catch {
-        Write-FatalError "Error building $($agent.Name): $_"
+        Write-FatalError "Error during Cloud Build for $($agent.Name): $_"
     }
 }
 
-Write-Success "All agent images built successfully"
+Write-Success "All agent images are ready in Artifact Registry"
 
-# ============================================================================
-# PUSH IMAGES TO ARTIFACT REGISTRY
-# ============================================================================
-
-Write-Section "Pushing Images to Artifact Registry"
-
-$pushCount = 0
-foreach ($agent in $agents) {
-    $pushCount++
-    Write-Subsection "[$pushCount/$totalAgents] Pushing $($agent.Name)"
-    
-    $imageName = "$($config.RegistryURL)/$($agent.Name):latest"
-    Write-Info "Image: $imageName"
-    
-    try {
-        $output = (docker push $imageName 2>&1 | Out-String).Trim()
-        
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "`nDocker Push Error Output:" -ForegroundColor Red
-            Write-Host $output -ForegroundColor Gray
-            Write-FatalError "Failed to push image for $($agent.Name)"
-        }
-        
-        Write-Success "Image pushed successfully"
-        
-    } catch {
-        Write-FatalError "Error pushing $($agent.Name): $_"
-    }
-}
-
-Write-Success "All agent images pushed to Artifact Registry"
 
 # ============================================================================
 # DEPLOY AGENTS TO CLOUD RUN

@@ -89,63 +89,40 @@ if (-not (Get-Command gcloud -ErrorAction SilentlyContinue)) {
 }
 Write-Success "Google Cloud SDK found"
 
-if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-    Write-FatalError "Docker not found. Please install Docker Desktop"
-}
-Write-Success "Docker found"
-
 # Set project
 Write-Info "Setting project to: $ProjectID"
 $output = (gcloud config set project $ProjectID 2>&1 | Out-String).Trim()
 Write-Success "Project configured"
 
+
 # ============================================================================
-# BUILD MAIN APP DOCKER IMAGE
+# BUILD & PUSH APPLICATION IMAGE (VIA CLOUD BUILD)
 # ============================================================================
 
-Write-Section "Building Main Application Image"
+Write-Section "Building & Pushing Application Image (via Cloud Build)"
 
-Write-Info "Building application Docker image..."
-Write-Info "Image Root: $($config.AppRoot)"
+Write-Info "Using Google Cloud Build for reliable cloud-native builds."
+Write-Info "Task: Build context $($config.AppRoot) -> $($config.RegistryURL)/$($config.AppName):latest"
 
 try {
     $imageName = "$($config.RegistryURL)/$($config.AppName):latest"
-    Write-Info "Docker Image: $imageName"
-    Write-Info ""
+    Write-Host "  Starting Cloud Build... (this may take 2-3 minutes)" -ForegroundColor Gray
     
-    $output = (docker build -t $imageName -f "$($config.AppRoot)/Dockerfile" $($config.AppRoot) 2>&1 | Out-String).Trim()
-    
-    if ($LASTEXITCODE -ne 0) {
-        Write-FatalError "Failed to build main application image`n$output"
-    }
-    
-    Write-Success "Application image built successfully"
-    
-} catch {
-    Write-FatalError "Error building application image: $_"
-}
-
-# ============================================================================
-# PUSH IMAGE TO ARTIFACT REGISTRY
-# ============================================================================
-
-Write-Section "Pushing Image to Artifact Registry"
-
-Write-Info "Pushing application image to registry..."
-
-try {
-    $imageName = "$($config.RegistryURL)/$($config.AppName):latest"
-    $output = (docker push $imageName 2>&1 | Out-String).Trim()
+    # Use gcloud builds submit for reliable cloud-side builds
+    $output = (gcloud builds submit --tag $imageName "$($config.AppRoot)" --project=$ProjectID --quiet 2>&1 | Out-String).Trim()
     
     if ($LASTEXITCODE -ne 0) {
-        Write-FatalError "Failed to push application image"
+        Write-Host "`nCloud Build Error Output:" -ForegroundColor Red
+        Write-Host $output -ForegroundColor Gray
+        Write-FatalError "Failed to build application image via Cloud Build"
     }
     
-    Write-Success "Application image pushed successfully"
+    Write-Success "Application image built and pushed successfully"
     
 } catch {
-    Write-FatalError "Error pushing application image: $_"
+    Write-FatalError "Error during Cloud Build for application: $_"
 }
+
 
 # ============================================================================
 # DEPLOY APPLICATION TO CLOUD RUN
