@@ -1,0 +1,260 @@
+steps:
+  # Step 1: Build Docker images for all agents
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGISTRY}/chief-justice:${SHORT_SHA}'
+      - '-t'
+      - '${_REGISTRY}/chief-justice:latest'
+      - './agents/chief_justice'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGISTRY}/quantitative-auditor:${SHORT_SHA}'
+      - '-t'
+      - '${_REGISTRY}/quantitative-auditor:latest'
+      - './agents/quantitative_auditor'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGISTRY}/legal-researcher:${SHORT_SHA}'
+      - '-t'
+      - '${_REGISTRY}/legal-researcher:latest'
+      - './agents/legal_researcher'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGISTRY}/mitigator-juror:${SHORT_SHA}'
+      - '-t'
+      - '${_REGISTRY}/mitigator-juror:latest'
+      - './agents/mitigator_juror'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGISTRY}/strict-auditor-juror:${SHORT_SHA}'
+      - '-t'
+      - '${_REGISTRY}/strict-auditor-juror:latest'
+      - './agents/strict_auditor_juror'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGISTRY}/ethicist-juror:${SHORT_SHA}'
+      - '-t'
+      - '${_REGISTRY}/ethicist-juror:latest'
+      - './agents/ethicist_juror'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGISTRY}/justice-ai-app:${SHORT_SHA}'
+      - '-t'
+      - '${_REGISTRY}/justice-ai-app:latest'
+      - './app'
+
+  # Step 2: Push images to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_REGISTRY}/chief-justice:${SHORT_SHA}'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_REGISTRY}/quantitative-auditor:${SHORT_SHA}'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_REGISTRY}/legal-researcher:${SHORT_SHA}'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_REGISTRY}/mitigator-juror:${SHORT_SHA}'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_REGISTRY}/strict-auditor-juror:${SHORT_SHA}'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_REGISTRY}/ethicist-juror:${SHORT_SHA}'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_REGISTRY}/justice-ai-app:${SHORT_SHA}'
+
+  # Step 3: Deploy to Cloud Run
+  - name: 'gcr.io/cloud-builders/gke-deploy'
+    args:
+      - 'run'
+      - '--filename=./k8s/'
+      - '--image=${_REGISTRY}/chief-justice:${SHORT_SHA}'
+      - '--location=${_REGION}'
+
+  # Step 4: Deploy Chief Justice Agent
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'chief-justice'
+      - '--image=${_REGISTRY}/chief-justice:${SHORT_SHA}'
+      - '--platform=managed'
+      - '--region=${_REGION}'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--timeout=3600'
+      - '--set-env-vars=GOOGLE_PROJECT_ID=$PROJECT_ID,REGION=${_REGION}'
+      - '--service-account=${_SERVICE_ACCOUNT}'
+      - '--no-allow-unauthenticated'
+
+  # Step 5: Deploy Quantitative Auditor
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'quantitative-auditor'
+      - '--image=${_REGISTRY}/quantitative-auditor:${SHORT_SHA}'
+      - '--platform=managed'
+      - '--region=${_REGION}'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--timeout=3600'
+      - '--set-env-vars=GOOGLE_PROJECT_ID=$PROJECT_ID,REGION=${_REGION}'
+      - '--service-account=${_SERVICE_ACCOUNT}'
+      - '--no-allow-unauthenticated'
+
+  # Step 6: Deploy Legal Researcher
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'legal-researcher'
+      - '--image=${_REGISTRY}/legal-researcher:${SHORT_SHA}'
+      - '--platform=managed'
+      - '--region=${_REGION}'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--timeout=3600'
+      - '--set-env-vars=GOOGLE_PROJECT_ID=$PROJECT_ID,REGION=${_REGION}'
+      - '--service-account=${_SERVICE_ACCOUNT}'
+      - '--no-allow-unauthenticated'
+
+  # Step 7: Deploy Mitigator Juror
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'mitigator-juror'
+      - '--image=${_REGISTRY}/mitigator-juror:${SHORT_SHA}'
+      - '--platform=managed'
+      - '--region=${_REGION}'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--timeout=3600'
+      - '--set-env-vars=GOOGLE_PROJECT_ID=$PROJECT_ID,REGION=${_REGION}'
+      - '--service-account=${_SERVICE_ACCOUNT}'
+      - '--no-allow-unauthenticated'
+
+  # Step 8: Deploy Strict Auditor Juror
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'strict-auditor-juror'
+      - '--image=${_REGISTRY}/strict-auditor-juror:${SHORT_SHA}'
+      - '--platform=managed'
+      - '--region=${_REGION}'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--timeout=3600'
+      - '--set-env-vars=GOOGLE_PROJECT_ID=$PROJECT_ID,REGION=${_REGION}'
+      - '--service-account=${_SERVICE_ACCOUNT}'
+      - '--no-allow-unauthenticated'
+
+  # Step 9: Deploy Ethicist Juror
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'ethicist-juror'
+      - '--image=${_REGISTRY}/ethicist-juror:${SHORT_SHA}'
+      - '--platform=managed'
+      - '--region=${_REGION}'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--timeout=3600'
+      - '--set-env-vars=GOOGLE_PROJECT_ID=$PROJECT_ID,REGION=${_REGION}'
+      - '--service-account=${_SERVICE_ACCOUNT}'
+      - '--no-allow-unauthenticated'
+
+  # Step 10: Deploy Main Application
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'justice-ai-app'
+      - '--image=${_REGISTRY}/justice-ai-app:${SHORT_SHA}'
+      - '--platform=managed'
+      - '--region=${_REGION}'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--timeout=3600'
+      - '--set-env-vars=GOOGLE_PROJECT_ID=$PROJECT_ID,REGION=${_REGION}'
+      - '--service-account=${_SERVICE_ACCOUNT}'
+      - '--allow-unauthenticated'
+
+  # Step 11: Health check
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'services'
+      - 'list'
+      - '--platform=managed'
+      - '--region=${_REGION}'
+
+# Build options
+options:
+  machineType: 'N1_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+
+# Images to be pushed to registry
+images:
+  - '${_REGISTRY}/chief-justice:${SHORT_SHA}'
+  - '${_REGISTRY}/chief-justice:latest'
+  - '${_REGISTRY}/quantitative-auditor:${SHORT_SHA}'
+  - '${_REGISTRY}/quantitative-auditor:latest'
+  - '${_REGISTRY}/legal-researcher:${SHORT_SHA}'
+  - '${_REGISTRY}/legal-researcher:latest'
+  - '${_REGISTRY}/mitigator-juror:${SHORT_SHA}'
+  - '${_REGISTRY}/mitigator-juror:latest'
+  - '${_REGISTRY}/strict-auditor-juror:${SHORT_SHA}'
+  - '${_REGISTRY}/strict-auditor-juror:latest'
+  - '${_REGISTRY}/ethicist-juror:${SHORT_SHA}'
+  - '${_REGISTRY}/ethicist-juror:latest'
+  - '${_REGISTRY}/justice-ai-app:${SHORT_SHA}'
+  - '${_REGISTRY}/justice-ai-app:latest'
+
+# Build timeout
+timeout: '3600s'
+
+# Substitution variables
+substitutions:
+  _REGISTRY: 'us-central1-docker.pkg.dev/${PROJECT_ID}/justice-ai-repository'
+  _REGION: 'us-central1'
+  _SERVICE_ACCOUNT: 'justice-ai-sa@${PROJECT_ID}.iam.gserviceaccount.com'

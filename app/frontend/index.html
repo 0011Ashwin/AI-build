@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Justice AI Workflow - Fairness Audit System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚖️ Justice AI Workflow</h1>
+            <p class="subtitle">Fairness-First Algorithmic Auditing System</p>
+            
+            <!-- Workflow Animation Visualization -->
+            <div class="workflow-container">
+                <div class="workflow-state" id="state1">
+                    <div class="state-circle">1</div>
+                    <div class="state-label">Intake</div>
+                </div>
+                <div class="workflow-line"></div>
+                <div class="workflow-state" id="state2">
+                    <div class="state-circle">2</div>
+                    <div class="state-label">Audit</div>
+                </div>
+                <div class="workflow-line"></div>
+                <div class="workflow-state" id="state3">
+                    <div class="state-circle">3</div>
+                    <div class="state-label">Research</div>
+                </div>
+                <div class="workflow-line"></div>
+                <div class="workflow-state" id="state4">
+                    <div class="state-circle">4</div>
+                    <div class="state-label">Jury</div>
+                </div>
+                <div class="workflow-line"></div>
+                <div class="workflow-state" id="state5">
+                    <div class="state-circle">5</div>
+                    <div class="state-label">Report</div>
+                </div>
+            </div>
+
+            <!-- Agent Status Board -->
+            <div class="agent-status-board" id="agentStatusBoard" style="display: none;">
+                <h3>🤖 Active Processing</h3>
+                <div class="agents-grid">
+                    <div class="agent-card" id="agent-chief-justice">
+                        <div class="agent-icon">⚖️</div>
+                        <div class="agent-name">Chief Justice</div>
+                        <div class="agent-status waiting">Waiting</div>
+                    </div>
+                    <div class="agent-card" id="agent-quantitative">
+                        <div class="agent-icon">📊</div>
+                        <div class="agent-name">Quantitative Auditor</div>
+                        <div class="agent-status waiting">Waiting</div>
+                    </div>
+                    <div class="agent-card" id="agent-legal">
+                        <div class="agent-icon">⚖️</div>
+                        <div class="agent-name">Legal Researcher</div>
+                        <div class="agent-status waiting">Waiting</div>
+                    </div>
+                    <div class="agent-card" id="agent-mitigator">
+                        <div class="agent-icon">🛡️</div>
+                        <div class="agent-name">Mitigator Juror</div>
+                        <div class="agent-status waiting">Waiting</div>
+                    </div>
+                    <div class="agent-card" id="agent-strict">
+                        <div class="agent-icon">⚔️</div>
+                        <div class="agent-name">Strict Auditor Juror</div>
+                        <div class="agent-status waiting">Waiting</div>
+                    </div>
+                    <div class="agent-card" id="agent-ethicist">
+                        <div class="agent-icon">✊</div>
+                        <div class="agent-name">Ethicist Juror</div>
+                        <div class="agent-status waiting">Waiting</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Navigation Tabs -->
+            <nav class="tabs">
+                <button class="tab-btn active" onclick="switchTab('intake')">📋 Intake</button>
+                <button class="tab-btn" onclick="switchTab('audit')">🔍 Audit</button>
+                <button class="tab-btn" onclick="switchTab('jury')">⚖️ Jury</button>
+                <button class="tab-btn" onclick="switchTab('report')">📄 Report</button>
+            </nav>
+
+            <!-- State 1: Intake Node -->
+            <div id="intake" class="tab-content active">
+                <h2>State 1: Intake Node</h2>
+                <p>Submit a case for fairness audit</p>
+                
+                <form id="auditForm">
+                    <div class="form-group">
+                        <label for="caseId">Case ID:</label>
+                        <input type="text" id="caseId" name="caseId" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="name">Name:</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="age">Age:</label>
+                        <input type="number" id="age" name="age" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="priors">Prior Incidents:</label>
+                        <input type="number" id="priors" name="priors" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="zipCode">Zip Code:</label>
+                        <input type="text" id="zipCode" name="zipCode" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="originalScore">Original Score:</label>
+                        <input type="number" id="originalScore" name="originalScore" step="0.01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="decisionType">Decision Type:</label>
+                        <select id="decisionType" name="decisionType" required>
+                            <option value="">Select...</option>
+                            <option value="hiring">Hiring</option>
+                            <option value="lending">Lending</option>
+                            <option value="criminal_justice">Criminal Justice</option>
+                            <option value="insurance">Insurance</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="jurisdiction">Jurisdiction:</label>
+                        <input type="text" id="jurisdiction" name="jurisdiction" value="US Federal" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Submit for Audit</button>
+                </form>
+            </div>
+
+            <!-- State 2: Audit Chamber -->
+            <div id="audit" class="tab-content">
+                <h2>State 2: Audit Chamber</h2>
+                <p>Quantitative bias analysis results</p>
+                
+                <div class="loading-section" id="auditLoading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p class="loading-text">Analyzing bias metrics...</p>
+                </div>
+                
+                <div id="auditResults" class="results-container" style="display: none;">
+                    <div class="metric">
+                        <h3>Disparate Impact Ratio (DIR)</h3>
+                        <p class="value" id="dirValue">-</p>
+                        <p class="status" id="dirStatus">-</p>
+                    </div>
+
+                    <div class="metric">
+                        <h3>Counterfactual Analysis</h3>
+                        <p class="value" id="cfValue">-</p>
+                        <p class="description" id="cfDesc">-</p>
+                    </div>
+
+                    <div class="metric">
+                        <h3>Bias Score</h3>
+                        <div class="bias-score-bar">
+                            <div id="biasScoreBar" class="score-bar"></div>
+                        </div>
+                        <p class="value" id="biasScore">-</p>
+                        <p class="risk-level" id="riskLevel">-</p>
+                    </div>
+
+                    <div class="metric">
+                        <h3>Corrected Score</h3>
+                        <p class="value" id="correctedScore">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- State 4: Jury Verdict -->
+            <div id="jury" class="tab-content">
+                <h2>State 4: Jury Verdict</h2>
+                <p>Multi-agent debate results</p>
+                
+                <div class="loading-section" id="juryLoading" style="display: none;">
+                    <div class="jury-debate-animation">
+                        <div class="juror-icon">🛡️</div>
+                        <div class="juror-icon">⚔️</div>
+                        <div class="juror-icon">✊</div>
+                    </div>
+                    <p class="loading-text">Jury debate in progress...</p>
+                </div>
+                
+                <div id="juryResults" class="jury-container" style="display: none;">
+                    <div class="juror">
+                        <h3>🛡️ Mitigator Juror</h3>
+                        <p class="role">Defense/Contextual</p>
+                        <p class="verdict" id="mitigatorVerdict">-</p>
+                    </div>
+
+                    <div class="juror">
+                        <h3>⚔️ Strict Auditor Juror</h3>
+                        <p class="role">Prosecutor</p>
+                        <p class="verdict" id="auditorVerdict">-</p>
+                    </div>
+
+                    <div class="juror">
+                        <h3>✊ Ethicist Juror</h3>
+                        <p class="role">Human Impact</p>
+                        <p class="verdict" id="ethicistVerdict">-</p>
+                    </div>
+                </div>
+
+                <div class="consensus">
+                    <h3>Consensus Verdict</h3>
+                    <p class="verdict-result" id="consensusVerdict">-</p>
+                </div>
+            </div>
+
+            <!-- State 5: Report -->
+            <div id="report" class="tab-content">
+                <h2>State 5: Final Audit Report</h2>
+                <p>Generated report and recommendations</p>
+                
+                <div class="loading-section" id="reportLoading" style="display: none;">
+                    <div class="report-generation-animation">
+                        <div class="doc-icon">📄</div>
+                        <div class="dot-animation">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                    <p class="loading-text">Generating final report...</p>
+                </div>
+                
+                <div id="reportContent" class="report-container" style="display: none;">
+                    <div class="report-section">
+                        <h3>Final Verdict</h3>
+                        <p class="verdict-display" id="finalVerdict">-</p>
+                    </div>
+
+                    <div class="report-section">
+                        <h3>Confidence Level</h3>
+                        <p id="confidenceLevel">-</p>
+                    </div>
+
+                    <div class="report-section">
+                        <h3>Key Findings</h3>
+                        <div id="keyFindings">-</div>
+                    </div>
+
+                    <button class="btn btn-secondary" onclick="downloadReport()">📥 Download PDF Report</button>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Justice AI Workflow | Fairness-First Algorithmic Auditing</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

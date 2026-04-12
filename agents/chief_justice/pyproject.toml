@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=65.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chief-justice-agent"
+version = "1.0.0"
+description = "Chief Justice Agent - Orchestrator for Justice AI Workflow"
+requires-python = ">=3.10"
+
+dependencies = [
+    "google-adk>=1.0.0",
+    "google-cloud-aiplatform>=1.40.0",
+    "google-genai>=0.3.0",
+    "httpx>=0.25.0",
+]

@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # Main Application Server
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - GOOGLE_PROJECT_ID=${GOOGLE_PROJECT_ID}
+      - GOOGLE_REGION=us-central1
+    depends_on:
+      - chief_justice
+      - quantitative_auditor
+      - legal_researcher
+      - mitigator_juror
+      - strict_auditor_juror
+      - ethicist_juror
+    networks:
+      - justice-network
+
+  # Agent: Chief Justice (Orchestrator)
+  chief_justice:
+    build:
+      context: ./agents/chief_justice
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    environment:
+      - AGENT_NAME=chief_justice
+      - AGENT_PORT=8000
+    networks:
+      - justice-network
+
+  # Agent: Quantitative Auditor
+  quantitative_auditor:
+    build:
+      context: ./agents/quantitative_auditor
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8000"
+    environment:
+      - AGENT_NAME=quantitative_auditor
+      - AGENT_PORT=8000
+    networks:
+      - justice-network
+
+  # Agent: Legal Researcher
+  legal_researcher:
+    build:
+      context: ./agents/legal_researcher
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8000"
+    environment:
+      - AGENT_NAME=legal_researcher
+      - AGENT_PORT=8000
+    networks:
+      - justice-network
+
+  # Agent: Mitigator Juror
+  mitigator_juror:
+    build:
+      context: ./agents/mitigator_juror
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8000"
+    environment:
+      - AGENT_NAME=mitigator_juror
+      - AGENT_PORT=8000
+    networks:
+      - justice-network
+
+  # Agent: Strict Auditor Juror
+  strict_auditor_juror:
+    build:
+      context: ./agents/strict_auditor_juror
+      dockerfile: Dockerfile
+    ports:
+      - "8005:8000"
+    environment:
+      - AGENT_NAME=strict_auditor_juror
+      - AGENT_PORT=8000
+    networks:
+      - justice-network
+
+  # Agent: Ethicist Juror
+  ethicist_juror:
+    build:
+      context: ./agents/ethicist_juror
+      dockerfile: Dockerfile
+    ports:
+      - "8006:8000"
+    environment:
+      - AGENT_NAME=ethicist_juror
+      - AGENT_PORT=8000
+    networks:
+      - justice-network
+
+networks:
+  justice-network:
+    driver: bridge
+
+volumes:
+  agent_state:
+  case_data:
+  audit_logs:

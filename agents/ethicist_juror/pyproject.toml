@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=65.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ethicist-juror-agent"
+version = "1.0.0"
+description = "Ethicist Juror Agent - Human Impact & SDG Alignment"
+requires-python = ">=3.10"
+
+dependencies = [
+    "google-adk>=1.0.0",
+    "google-cloud-aiplatform>=1.40.0",
+    "google-genai>=0.3.0",
+]
