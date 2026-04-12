@@ -202,8 +202,8 @@ foreach ($agent in $agents) {
     try {
         Write-Host "  Starting Cloud Build... (this may take 2-3 minutes)" -ForegroundColor Gray
         
-        # Use gcloud builds submit from the root context to ensure shared folders are captured
-        $output = (gcloud builds submit --tag $imageName --file "$($agent.Path)/Dockerfile" . --project=$ProjectID --quiet 2>&1 | Out-String).Trim()
+        # Use gcloud builds submit - the agent directory contains the Dockerfile
+        $output = (gcloud builds submit --tag $imageName "$($agent.Path)" --project=$ProjectID --quiet 2>&1 | Out-String).Trim()
         
         if ($LASTEXITCODE -ne 0) {
             Write-Host "`nCloud Build Error Output:" -ForegroundColor Red
