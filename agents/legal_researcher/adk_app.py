@@ -1,20 +1,13 @@
 """
 Legal Researcher - FastAPI HTTP Server for Cloud Run
+Lazy imports to prevent startup crashes
 """
 import os
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from typing import Dict, Any
 
-from agent import LegalResearcherAgent
-
-app = FastAPI(
-    title="Legal Researcher Agent",
-    description="Legal Research and Precedent Retrieval Agent",
-    version="1.0.0"
-)
-
-researcher = LegalResearcherAgent()
+app = FastAPI(title="Legal Researcher Agent", version="1.0.0")
 
 
 @app.get("/health")
@@ -24,8 +17,9 @@ async def health_check():
 
 @app.post("/research")
 async def handle_research_request(audit_findings: Dict[str, Any]):
-    """Handle legal research request"""
     try:
+        from agent import LegalResearcherAgent
+        researcher = LegalResearcherAgent()
         result = await researcher.research_bias(audit_findings)
         return {"research_result": result}
     except Exception as e:
@@ -34,8 +28,9 @@ async def handle_research_request(audit_findings: Dict[str, Any]):
 
 @app.post("/tools/query-precedents")
 async def query_precedents(data: Dict[str, Any]):
-    """Query legal precedents"""
     try:
+        from agent import LegalResearcherAgent
+        researcher = LegalResearcherAgent()
         result = await researcher._query_precedents(data.get("bias_type", ""))
         return {"precedents": result}
     except Exception as e:
@@ -44,4 +39,5 @@ async def query_precedents(data: Dict[str, Any]):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
+    print(f"Starting Legal Researcher on port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)

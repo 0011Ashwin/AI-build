@@ -1,20 +1,13 @@
 """
 Quantitative Auditor - FastAPI HTTP Server for Cloud Run
+Lazy imports to prevent startup crashes
 """
 import os
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from typing import Dict, Any
 
-from agent import QuantitativeAuditorAgent
-
-app = FastAPI(
-    title="Quantitative Auditor Agent",
-    description="Quantitative Bias Analysis Agent",
-    version="1.0.0"
-)
-
-auditor = QuantitativeAuditorAgent()
+app = FastAPI(title="Quantitative Auditor Agent", version="1.0.0")
 
 
 @app.get("/health")
@@ -24,8 +17,9 @@ async def health_check():
 
 @app.post("/analyze")
 async def handle_analysis_request(case_data: Dict[str, Any]):
-    """Handle case analysis request"""
     try:
+        from agent import QuantitativeAuditorAgent
+        auditor = QuantitativeAuditorAgent()
         result = await auditor.analyze_case(case_data)
         return {"analysis": result}
     except Exception as e:
@@ -34,8 +28,9 @@ async def handle_analysis_request(case_data: Dict[str, Any]):
 
 @app.post("/tools/calculate-dir")
 async def calculate_dir(data: Dict[str, Any]):
-    """Calculate Disparate Impact Ratio"""
     try:
+        from agent import QuantitativeAuditorAgent
+        auditor = QuantitativeAuditorAgent()
         result = await auditor._calculate_disparate_impact(data)
         return {"result": result}
     except Exception as e:
@@ -44,4 +39,5 @@ async def calculate_dir(data: Dict[str, Any]):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
+    print(f"Starting Quantitative Auditor on port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
