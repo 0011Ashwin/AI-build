@@ -207,6 +207,8 @@ foreach ($agent in $agents) {
         $output = (docker build -t $imageName -f "$($agent.Path)/Dockerfile" $($agent.Path) 2>&1 | Out-String).Trim()
         
         if ($LASTEXITCODE -ne 0) {
+            Write-Host "`nDocker Build Error Output:" -ForegroundColor Red
+            Write-Host $output -ForegroundColor Gray
             Write-FatalError "Failed to build image for $($agent.Name)"
         }
         
@@ -237,6 +239,8 @@ foreach ($agent in $agents) {
         $output = (docker push $imageName 2>&1 | Out-String).Trim()
         
         if ($LASTEXITCODE -ne 0) {
+            Write-Host "`nDocker Push Error Output:" -ForegroundColor Red
+            Write-Host $output -ForegroundColor Gray
             Write-FatalError "Failed to push image for $($agent.Name)"
         }
         
