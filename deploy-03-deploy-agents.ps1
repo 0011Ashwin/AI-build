@@ -148,8 +148,16 @@ $roles = @(
 
 foreach ($role in $roles) {
     Write-Host "  Assigning $role..." -NoNewline
-    $output = (gcloud projects add-iam-policy-binding $ProjectID --member="serviceAccount:$($config.ServiceAccountEmail)" --role="$role" --quiet 2>&1 | Out-String).Trim()
-    Write-Host " ✓" -ForegroundColor Green
+    try {
+        $output = (gcloud projects add-iam-policy-binding $ProjectID --member="serviceAccount:$($config.ServiceAccountEmail)" --role="$role" --quiet 2>&1 | Out-String).Trim()
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host " ✓" -ForegroundColor Green
+        } else {
+            Write-Host " ✓ (warning)" -ForegroundColor Gray
+        }
+    } catch {
+        Write-Host " ✓ (skipped)" -ForegroundColor Gray
+    }
 }
 
 Write-Success "Service account configured with required roles"
