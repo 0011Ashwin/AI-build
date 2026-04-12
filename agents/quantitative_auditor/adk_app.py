@@ -1,42 +1,47 @@
 """
-Quantitative Auditor ADK Application
+Quantitative Auditor - FastAPI HTTP Server for Cloud Run
 """
-
-from google.adk import adk_app
-from agent import QuantitativeAuditorAgent
 import os
-import json
+import uvicorn
+from fastapi import FastAPI, HTTPException
+from typing import Dict, Any
+
+from agent import QuantitativeAuditorAgent
+
+app = FastAPI(
+    title="Quantitative Auditor Agent",
+    description="Quantitative Bias Analysis Agent",
+    version="1.0.0"
+)
+
+auditor = QuantitativeAuditorAgent()
 
 
-def create_adk_app():
-    """Create ADK application for Quantitative Auditor"""
-    
-    auditor = QuantitativeAuditorAgent()
-    
-    app = adk_app.ADKApp(
-        name="quantitative_auditor",
-        description="Quantitative Bias Analysis Agent",
-        version="1.0.0"
-    )
-    
-    @app.route("/analyze", methods=["POST"])
-    async def handle_analysis_request(request):
-        """Handle case analysis request"""
-        case_data = await request.json()
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "agent": "quantitative-auditor"}
+
+
+@app.post("/analyze")
+async def handle_analysis_request(case_data: Dict[str, Any]):
+    """Handle case analysis request"""
+    try:
         result = await auditor.analyze_case(case_data)
         return {"analysis": result}
-    
-    @app.route("/tools/calculate-dir", methods=["POST"])
-    async def calculate_dir(request):
-        """Calculate Disparate Impact Ratio"""
-        data = await request.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/tools/calculate-dir")
+async def calculate_dir(data: Dict[str, Any]):
+    """Calculate Disparate Impact Ratio"""
+    try:
         result = await auditor._calculate_disparate_impact(data)
         return {"result": result}
-    
-    return app
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
-    app = create_adk_app()
     port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=port)
