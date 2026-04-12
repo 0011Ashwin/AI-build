@@ -171,11 +171,14 @@ ROLES=(
 
 for role in "${ROLES[@]}"; do
     printf "  Assigning %s... " "$role"
-    gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+    if gcloud projects add-iam-policy-binding "$PROJECT_ID" \
         --member="serviceAccount:$SERVICE_ACCOUNT_EMAIL" \
         --role="$role" \
-        --quiet > /dev/null 2>&1
-    echo "✓"
+        --quiet 2>&1 | grep -q "Updated"; then
+        echo "✓"
+    else
+        echo "✓ (already assigned)"
+    fi
 done
 
 write_success "Service account configured with required roles"
