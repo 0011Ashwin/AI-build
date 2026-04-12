@@ -263,6 +263,8 @@ foreach ($agent in $agents) {
             2>&1 | Out-String).Trim()
         
         if ($LASTEXITCODE -ne 0) {
+            Write-Host "`nCloud Run Deploy Error Output:" -ForegroundColor Red
+            Write-Host $output -ForegroundColor Gray
             Write-FatalError "Failed to deploy $serviceName"
         }
         
