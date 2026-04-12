@@ -4,6 +4,7 @@
 # This script sets up the Firestore database and Cloud Storage buckets
 # Run this SECOND after enabling APIs
 
+[CmdletBinding()]
 param(
     [Parameter(Mandatory=$true, HelpMessage="Google Cloud Project ID")]
     [string]$ProjectID,
@@ -15,14 +16,11 @@ param(
     [switch]$SetupFirestore = $true,
     
     [Parameter(Mandatory=$false, HelpMessage="Create Cloud Storage buckets")]
-    [switch]$CreateBuckets = $true,
-    
-    [Parameter(Mandatory=$false, HelpMessage="Enable verbose logging")]
-    [switch]$Verbose
+    [switch]$CreateBuckets = $true
 )
 
 $ErrorActionPreference = "Stop"
-$VerbosePreference = if ($Verbose) { "Continue" } else { "SilentlyContinue" }
+
 
 # ============================================================================
 # LOGGING FUNCTIONS

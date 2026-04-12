@@ -4,16 +4,14 @@
 # This script enables all 13 required GCP APIs for Justice AI Workflow
 # Run this FIRST before any other deployment steps
 
+[CmdletBinding()]
 param(
     [Parameter(Mandatory=$true, HelpMessage="Google Cloud Project ID")]
-    [string]$ProjectID,
-    
-    [Parameter(Mandatory=$false, HelpMessage="Enable verbose logging")]
-    [switch]$Verbose
+    [string]$ProjectID
 )
 
 $ErrorActionPreference = "Stop"
-$VerbosePreference = if ($Verbose) { "Continue" } else { "SilentlyContinue" }
+
 
 # ============================================================================
 # LOGGING FUNCTIONS

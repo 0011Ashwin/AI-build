@@ -4,6 +4,7 @@
 # This script orchestrates the step-by-step deployment of Justice AI Workflow
 # Can run all phases sequentially or deploy specific phases
 
+[CmdletBinding()]
 param(
     [Parameter(Mandatory=$true, HelpMessage="Google Cloud Project ID")]
     [string]$ProjectID,
@@ -16,13 +17,11 @@ param(
     [string]$Phase = "all",
     
     [Parameter(Mandatory=$false, HelpMessage="Skip confirmation prompts")]
-    [switch]$SkipConfirmation,
-    
-    [Parameter(Mandatory=$false, HelpMessage="Enable verbose logging")]
-    [switch]$Verbose
+    [switch]$SkipConfirmation
 )
 
 $ErrorActionPreference = "Stop"
+
 
 # ============================================================================
 # LOGGING FUNCTIONS
@@ -154,7 +153,7 @@ foreach ($phaseName in $phasesToRun) {
         Region = $Region
     }
     
-    if ($Verbose) {
+    if ($PSBoundParameters.ContainsKey('Verbose')) {
         $params.Verbose = $true
     }
     

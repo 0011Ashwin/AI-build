@@ -4,6 +4,7 @@
 # This script deploys each agent individually to Google Cloud Run
 # Run this THIRD after setting up database
 
+[CmdletBinding()]
 param(
     [Parameter(Mandatory=$true, HelpMessage="Google Cloud Project ID")]
     [string]$ProjectID,
@@ -15,14 +16,11 @@ param(
     [string]$ServiceAccountName = "justice-ai-sa",
     
     [Parameter(Mandatory=$false, HelpMessage="Deploy only specific agent (optional)")]
-    [string]$DeployAgent = "all",
-    
-    [Parameter(Mandatory=$false, HelpMessage="Enable verbose logging")]
-    [switch]$Verbose
+    [string]$DeployAgent = "all"
 )
 
 $ErrorActionPreference = "Stop"
-$VerbosePreference = if ($Verbose) { "Continue" } else { "SilentlyContinue" }
+
 
 # ============================================================================
 # CONFIGURATION

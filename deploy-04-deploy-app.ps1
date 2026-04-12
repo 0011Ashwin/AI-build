@@ -4,6 +4,7 @@
 # This script deploys the main FastAPI application to Google Cloud Run
 # Run this FOURTH after deploying all agents
 
+[CmdletBinding()]
 param(
     [Parameter(Mandatory=$true, HelpMessage="Google Cloud Project ID")]
     [string]$ProjectID,
@@ -12,14 +13,11 @@ param(
     [string]$Region = "us-central1",
     
     [Parameter(Mandatory=$false, HelpMessage="Service Account Name")]
-    [string]$ServiceAccountName = "justice-ai-sa",
-    
-    [Parameter(Mandatory=$false, HelpMessage="Enable verbose logging")]
-    [switch]$Verbose
+    [string]$ServiceAccountName = "justice-ai-sa"
 )
 
 $ErrorActionPreference = "Stop"
-$VerbosePreference = if ($Verbose) { "Continue" } else { "SilentlyContinue" }
+
 
 # ============================================================================
 # CONFIGURATION
