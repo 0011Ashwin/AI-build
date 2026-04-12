@@ -7,6 +7,7 @@ RUN pip install -e .
 
 COPY . .
 
-EXPOSE 8000
+ENV PORT=8080
+EXPOSE 8080
 
 CMD ["python", "main.py"]
