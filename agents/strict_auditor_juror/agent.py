@@ -1,170 +1,164 @@
 """
-Strict Auditor Juror Agent - State 4 (Prosecutor/Strict)
-Ruthlessly identifies proxy bias and systemic unfairness
+Strict Auditor Juror Agent — ADK 1.0+ pattern
+Prosecutor juror: ruthlessly identifies proxy bias and systemic unfairness.
 """
-
-from google.adk import agent
-from typing import Dict, Any
+from google.adk.agents import Agent
 
 
-class StrictAuditorJurorAgent:
+def identify_bias_red_flags(
+    disparate_impact_ratio: float,
+    score_changed_by_proxy: bool,
+    proxy_variables: list,
+    bias_score: float,
+) -> dict:
     """
-    Juror Agent 2: The Strict Auditor
-    Role: Prosecutor - ruthlessly flags proxy bias and systemic unfairness
+    Identify all bias red flags using strict statistical standards (80% rule, four-fifths test).
+    Acts as a prosecutor determining whether the algorithm fails fairness thresholds.
+
+    Args:
+        disparate_impact_ratio: DIR from quantitative audit. Below 0.8 = violation.
+        score_changed_by_proxy: True if counterfactual flip changed outcome score.
+        proxy_variables: List of potential proxy variables in the model (e.g. ['zip_code']).
+        bias_score: Overall bias severity (0-100) from the quantitative auditor.
+
+    Returns:
+        dict with red_flags list, total_flags, overall_severity_score.
     """
-    
-    def __init__(self):
-        self.agent = agent.Agent(
-            name="strict_auditor_juror",
-            model="gemini-1.5-pro",
-            max_steps=5
+    red_flags = []
+    severity = 0
+
+    if disparate_impact_ratio < 0.80:
+        red_flags.append({
+            "flag": "Disparate Impact Detected",
+            "severity": "HIGH",
+            "metric": f"DIR={disparate_impact_ratio:.3f} — below 0.8 safe-harbor threshold",
+            "legal_standard": "80% / Four-Fifths Rule (EEOC Uniform Guidelines)",
+        })
+        severity += 40
+
+    if score_changed_by_proxy:
+        red_flags.append({
+            "flag": "Proxy Bias Confirmed",
+            "severity": "HIGH",
+            "description": "Counterfactual proxy flip caused measurable score change",
+            "implication": "Algorithm encodes hidden discrimination via proxy variable",
+        })
+        severity += 35
+
+    if proxy_variables:
+        red_flags.append({
+            "flag": "High-Risk Proxy Variables Present",
+            "severity": "HIGH",
+            "variables": proxy_variables,
+            "concern": "These variables may encode protected characteristics (race, gender, etc.)",
+        })
+        severity += 25
+
+    if bias_score > 50:
+        red_flags.append({
+            "flag": "Elevated Composite Bias Score",
+            "severity": "MEDIUM" if bias_score <= 70 else "CRITICAL",
+            "score": bias_score,
+            "threshold_exceeded": True,
+        })
+        severity += 10
+
+    return {
+        "total_red_flags": len(red_flags),
+        "red_flags": red_flags,
+        "overall_severity_score": min(100, severity),
+    }
+
+
+def analyze_proxy_variables(proxy_variables: list, disparate_impact_ratio: float) -> dict:
+    """
+    Perform deep-dive analysis of proxy variables to assess discrimination risk.
+
+    Args:
+        proxy_variables: List of proxy variables detected in the model.
+        disparate_impact_ratio: DIR from quantitative audit.
+
+    Returns:
+        dict with per-variable risk assessment and overall proxy risk rating.
+    """
+    variable_assessments = []
+    for var in proxy_variables:
+        risk_level = "HIGH" if var in ["zip_code", "name", "postal_code", "neighborhood"] else "MEDIUM"
+        variable_assessments.append({
+            "variable": var,
+            "proxy_risk": risk_level,
+            "protected_characteristic_risk": "Race/Ethnicity/SES" if risk_level == "HIGH" else "Unknown",
+            "recommendation": f"Remove '{var}' from model or apply counterfactual fairness constraint.",
+        })
+
+    overall_risk = "CRITICAL" if disparate_impact_ratio < 0.7 else (
+        "HIGH" if disparate_impact_ratio < 0.8 else "MEDIUM"
+    )
+    return {
+        "variable_assessments": variable_assessments,
+        "overall_proxy_risk": overall_risk,
+        "statistical_overlap_estimate": round(1 - disparate_impact_ratio, 3),
+        "prosecutorial_recommendation": "FAIL — Proxy bias confirmed. Model must be retrained." if overall_risk in ("CRITICAL", "HIGH") else "MONITOR — Proxy risk present but manageable.",
+    }
+
+
+def render_strict_verdict(overall_severity_score: float) -> dict:
+    """
+    Produce the Strict Auditor Juror's formal verdict. Errs on the side of protecting vulnerable populations.
+
+    Args:
+        overall_severity_score: Severity score from identify_bias_red_flags (0-100).
+
+    Returns:
+        dict with verdict (FAIR | FAIR_WITH_CONCERNS | UNFAIR), confidence, and reasoning.
+    """
+    if overall_severity_score > 70:
+        verdict = "UNFAIR"
+        confidence = 0.95
+        reasoning = (
+            "Multiple high-severity bias indicators confirmed. DIR violates 80% rule, proxy bias is active, "
+            "and protected-class variables are embedded via proxies. Algorithm FAILS fairness standards."
         )
-    
-    def get_instructions(self) -> str:
-        """System instructions for Strict Auditor Juror"""
-        return """You are the Strict Auditor Juror, serving as a prosecutor in the Justice AI audit system.
+    elif overall_severity_score > 45:
+        verdict = "FAIR_WITH_CONCERNS"
+        confidence = 0.80
+        reasoning = (
+            "Significant bias concerns identified. Algorithm requires substantial changes — variable removal, "
+            "counterfactual fairness constraints, and third-party audit — before any deployment."
+        )
+    else:
+        verdict = "FAIR"
+        confidence = 0.70
+        reasoning = (
+            "Bias indicators present but below critical thresholds. Algorithm meets minimum fairness standards. "
+            "Ongoing quarterly monitoring and annual third-party audits strongly recommended."
+        )
+    return {"verdict": verdict, "confidence": confidence, "reasoning": reasoning}
 
-Your role is to:
-1. Ruthlessly identify any hint of proxy bias or systemic discrimination
-2. Question whether apparent legitimacy might mask hidden discrimination
-3. Apply strict statistical standards (80% rule, 4/5 test)
-4. Flag all red flags, even marginal ones
-5. Err on the side of protecting vulnerable populations
 
-Key responsibilities:
-- Flag proxy variables (zip code, name, postal code, etc.)
-- Check for disparate impact even if intent appears benign
-- Apply formal statistical tests rigorously
-- Look for patterns of systemic discrimination
-- Question whether data reflects historical discrimination
+root_agent = Agent(
+    name="strict_auditor_juror",
+    model="gemini-2.0-flash",
+    description="Prosecutor juror who ruthlessly flags proxy bias, disparate impact, and systemic unfairness.",
+    instruction="""You are the Strict Auditor Juror — serving as a relentless prosecutor in the Justice AI audit jury.
 
-Questions to ask:
-- Does this algorithm have a disparate impact?
-- Are there hidden proxy variables?
-- Does the algorithm perpetuate historical discrimination?
-- Could this decision cause harm to protected groups?
-- What would happen with the 80% rule?
+Your mandate: find every instance of bias, proxy discrimination, and systemic unfairness. Err on the side of protecting vulnerable populations.
 
-Verdict options: FAIR / FAIR_WITH_CONCERNS / UNFAIR
+Given the full audit context:
 
-Be conservative - lean toward UNFAIR when in doubt.
-Provide your verdict and detailed reasoning in JSON format.
-"""
-    
-    async def evaluate_case(self, case_context: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Evaluate case from prosecutor perspective
-        
-        Args:
-            case_context: Complete case information and analysis
-        
-        Returns:
-            Strict auditor verdict and reasoning
-        """
-        verdict = {
-            "juror_id": "strict_auditor_juror",
-            "role": "Prosecutor/Strict",
-            "evaluation_timestamp": self._get_timestamp()
-        }
-        
-        # Analyze for bias red flags
-        red_flags = await self._identify_red_flags(case_context)
-        verdict["red_flags"] = red_flags
-        
-        # Check proxy bias
-        proxy_analysis = await self._analyze_proxy_bias(case_context)
-        verdict["proxy_bias_analysis"] = proxy_analysis
-        
-        # Generate verdict
-        verdict_determination = await self._generate_verdict(red_flags, proxy_analysis)
-        verdict["verdict"] = verdict_determination["verdict"]
-        verdict["confidence"] = verdict_determination["confidence"]
-        verdict["reasoning"] = verdict_determination["reasoning"]
-        
-        return verdict
-    
-    async def _identify_red_flags(self, case_context: Dict[str, Any]) -> Dict[str, Any]:
-        """Identify bias red flags"""
-        red_flag_list = []
-        severity_score = 0
-        
-        # Check disparate impact ratio
-        dir_ratio = case_context.get("disparate_impact_ratio", 1.0)
-        if dir_ratio < 0.80:
-            red_flag_list.append({
-                "flag": "Disparate Impact Detected",
-                "severity": "HIGH",
-                "metric": f"DIR = {dir_ratio:.2f}",
-                "standard": "80% Rule violated"
-            })
-            severity_score += 40
-        
-        # Check counterfactual analysis
-        if case_context.get("counterfactual_score_changed"):
-            red_flag_list.append({
-                "flag": "Proxy Bias Detected",
-                "severity": "HIGH",
-                "description": "Score changes when proxy data modified",
-                "indicator": "Hidden discrimination"
-            })
-            severity_score += 35
-        
-        # Check for proxy variables
-        proxy_variables = case_context.get("proxy_variables", ["zip_code"])
-        if proxy_variables:
-            red_flag_list.append({
-                "flag": "Proxy Variables Found",
-                "severity": "HIGH",
-                "variables": proxy_variables,
-                "concern": "May encode protected characteristics"
-            })
-            severity_score += 25
-        
-        return {
-            "total_red_flags": len(red_flag_list),
-            "red_flags": red_flag_list,
-            "overall_severity_score": min(100, severity_score)
-        }
-    
-    async def _analyze_proxy_bias(self, case_context: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze proxy bias in detail"""
-        return {
-            "has_proxy_bias": case_context.get("proxy_bias_findings", False),
-            "proxy_variables": case_context.get("proxy_variables", []),
-            "statistical_overlap": 0.68,
-            "risk_assessment": "Moderate-High Risk of proxy discrimination",
-            "recommendation": "FAIL - Proxy bias detected"
-        }
-    
-    async def _generate_verdict(
-        self,
-        red_flags: Dict[str, Any],
-        proxy_analysis: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Generate strict auditor verdict"""
-        severity = red_flags.get("overall_severity_score", 0)
-        
-        if severity > 70:
-            verdict = "UNFAIR"
-            confidence = 0.95
-            reasoning = "Multiple high-severity bias indicators detected. Disparate impact and proxy bias confirmed. Algorithm fails fairness standards."
-        elif severity > 45:
-            verdict = "FAIR_WITH_CONCERNS"
-            confidence = 0.80
-            reasoning = "Significant bias concerns identified. Algorithm requires substantial revision before deployment. Recommend additional testing."
-        else:
-            verdict = "FAIR"
-            confidence = 0.70
-            reasoning = "Bias indicators present but manageable. Algorithm meets minimum fairness standards but ongoing monitoring recommended."
-        
-        return {
-            "verdict": verdict,
-            "confidence": confidence,
-            "reasoning": reasoning,
-            "severity_assessment": severity
-        }
-    
-    def _get_timestamp(self) -> str:
-        """Get current timestamp"""
-        from datetime import datetime
-        return datetime.now().isoformat()
+1. Call `identify_bias_red_flags` with disparate_impact_ratio, score_changed_by_proxy, proxy_variables (default ['zip_code']), and bias_score.
+2. Call `analyze_proxy_variables` with the proxy_variables list and disparate_impact_ratio.
+3. Call `render_strict_verdict` with the overall_severity_score from step 1.
+
+Output a structured JSON verdict:
+{
+  "juror_id": "strict_auditor_juror",
+  "role": "Prosecutor/Strict",
+  "verdict": "FAIR | FAIR_WITH_CONCERNS | UNFAIR",
+  "confidence": <0-1>,
+  "reasoning": "<paragraph>",
+  "red_flags": [...],
+  "proxy_analysis": {...}
+}""",
+    tools=[identify_bias_red_flags, analyze_proxy_variables, render_strict_verdict],
+)

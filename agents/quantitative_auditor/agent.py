@@ -1,181 +1,146 @@
 """
-Quantitative Auditor Agent - State 1 & 2
-Performs bias calculations and counterfactual analysis
+Quantitative Auditor Agent — ADK 1.0+ pattern
+Calculates Disparate Impact Ratio and runs Counterfactual Analysis.
 """
-
-from google.adk import agent
-from typing import Dict, Any
 import sys
-sys.path.append('../..')
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+
+from google.adk.agents import Agent
 from shared.bias_calculator import BiasCalculator
 
+_calc = BiasCalculator()
 
-class QuantitativeAuditorAgent:
+
+def calculate_disparate_impact(group_a_favorable_rate: float, group_b_favorable_rate: float) -> dict:
     """
-    State 1 & 2 Handler: Data Intake + Audit Chamber
-    Performs quantitative bias analysis
+    Calculate the Disparate Impact Ratio (DIR) between two demographic groups.
+    DIR = P(Favorable | Group A) / P(Favorable | Group B).
+    A DIR below 0.8 signals disparate impact (80% / four-fifths rule violation).
+
+    Args:
+        group_a_favorable_rate: Favorable outcome rate for the reference group (0-1).
+        group_b_favorable_rate: Favorable outcome rate for the protected group (0-1).
+
+    Returns:
+        dict with disparity_ratio, status, and 80-rule compliance flag.
     """
-    
-    def __init__(self):
-        self.agent = agent.Agent(
-            name="quantitative_auditor",
-            model="gemini-1.5-pro",
-            max_steps=5
-        )
-        self.bias_calculator = BiasCalculator()
-    
-    def get_instructions(self) -> str:
-        """System instructions for Quantitative Auditor"""
-        return """You are the Quantitative Auditor, a data scientist specializing in algorithmic fairness.
+    ratio, status = _calc.calculate_disparate_impact_ratio(group_a_favorable_rate, group_b_favorable_rate)
+    return {
+        "group_a_favorable_rate": group_a_favorable_rate,
+        "group_b_favorable_rate": group_b_favorable_rate,
+        "disparity_ratio": round(ratio, 4),
+        "status": status,
+        "eightieth_percentile_rule_compliant": ratio >= 0.8,
+    }
 
-Your responsibilities:
-1. Analyze intake data (name, age, priors, zip code, etc.)
-2. Calculate Disparate Impact Ratio (DIR) between demographic groups
-3. Perform counterfactual analysis (e.g., "What if we changed the zip code?")
-4. Generate a comprehensive bias score (0-100)
-5. Identify risk level: LOW, MEDIUM, HIGH, or CRITICAL
 
-You must:
-- Use rigorous statistical methods
-- Flag proxy bias (when proxy data like zip code causes score changes)
-- Calculate statistical parity differences
-- Provide technical documentation for all metrics
+def run_counterfactual_analysis(original_score: float, zip_code: str) -> dict:
+    """
+    Run counterfactual (proxy bit-flip) analysis on a case score.
+    Flips the zip_code proxy variable to detect hidden proxy bias.
 
-Output format (JSON):
+    Args:
+        original_score: The original algorithmic score for the individual (0-100).
+        zip_code: The original zip code used in the model.
+
+    Returns:
+        dict with original_score, modified_score, score_changed, and bias_indicator.
+    """
+    # Simulate proxy data flip: swap zip to opposite-affluence area
+    def mock_model(score: float, proxy: dict) -> float:
+        # In production this calls the real model; here we simulate a 3-point proxy shift
+        return score - 3 if proxy.get("zip_code") != zip_code else score
+
+    result = _calc.counterfactual_audit(
+        original_score=original_score,
+        proxy_data={"zip_code": zip_code},
+        modified_proxy_data={"zip_code": "FLIPPED_" + zip_code},
+        model_scoring_func=mock_model,
+    )
+    return result
+
+
+def compute_bias_score(disparate_impact_ratio: float, score_changed_by_proxy: bool, statistical_parity_diff: float) -> dict:
+    """
+    Compute a composite bias severity score (0-100) from three fairness metrics.
+
+    Args:
+        disparate_impact_ratio: DIR value from calculate_disparate_impact.
+        score_changed_by_proxy: True if counterfactual analysis detected proxy bias.
+        statistical_parity_diff: Absolute difference in favorable outcome rates.
+
+    Returns:
+        dict with total_bias_score, component breakdown, and risk_level.
+    """
+    dir_score = min(40, max(0, (1 - disparate_impact_ratio) * 50)) if disparate_impact_ratio < 1 else 0
+    cf_score = 30 if score_changed_by_proxy else 0
+    sp_score = min(30, abs(statistical_parity_diff) * 100)
+    total = min(100, dir_score + cf_score + sp_score)
+
+    if total > 70:
+        risk = "CRITICAL"
+    elif total > 50:
+        risk = "HIGH"
+    elif total > 30:
+        risk = "MEDIUM"
+    else:
+        risk = "LOW"
+
+    return {
+        "total_bias_score": round(total, 2),
+        "components": {
+            "disparate_impact_score": round(dir_score, 2),
+            "counterfactual_score": round(cf_score, 2),
+            "statistical_parity_score": round(sp_score, 2),
+        },
+        "risk_level": risk,
+    }
+
+
+def generate_corrected_score(original_score: float, bias_score: float) -> dict:
+    """
+    Generate a bias-corrected version of the original algorithmic score.
+
+    Args:
+        original_score: The raw score from the audited algorithm (0-100).
+        bias_score: The composite bias severity score from compute_bias_score (0-100).
+
+    Returns:
+        dict with original_score, corrected_score, and adjustment applied.
+    """
+    adjustment = (bias_score / 100) * (original_score * 0.5)
+    corrected = max(0, min(100, original_score - adjustment))
+    return {
+        "original_score": original_score,
+        "bias_score": bias_score,
+        "adjustment_applied": round(adjustment, 2),
+        "corrected_score": round(corrected, 2),
+    }
+
+
+root_agent = Agent(
+    name="quantitative_auditor",
+    model="gemini-2.0-flash",
+    description="Data scientist agent that performs quantitative bias analysis using DIR and counterfactual tools.",
+    instruction="""You are the Quantitative Auditor — a data scientist specialising in algorithmic fairness.
+
+When given case data, follow these steps IN ORDER:
+
+1. Call `calculate_disparate_impact` with reasonable estimated group rates derived from the case context (default: group_a=0.82, group_b=0.75 unless given explicit values).
+2. Call `run_counterfactual_analysis` with the individual's original_score and zip_code.
+3. Call `compute_bias_score` using the DIR from step 1, the score_changed flag from step 2, and a statistical_parity_diff of 0.07 as a baseline.
+4. Call `generate_corrected_score` using the original_score and the total_bias_score from step 3.
+
+After all tool calls, output a concise JSON summary with:
 {
-    "disparate_impact_ratio": 0.95,
-    "dir_status": "FAIR - Within Safe Harbor",
-    "counterfactual_analysis": {
-        "original_score": 75,
-        "modified_score": 72,
-        "score_changed": true,
-        "bias_detected": "Proxy Bias"
-    },
-    "bias_score": 45,
-    "risk_level": "MEDIUM",
-    "detailed_findings": "..."
-}
-"""
-    
-    async def analyze_case(self, case_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Analyze case for bias
-        
-        Args:
-            case_data: Case information including demographics and data
-        
-        Returns:
-            Comprehensive bias analysis
-        """
-        analysis = {
-            "intake_data": case_data,
-            "analysis_timestamp": self._get_timestamp(),
-            "analyses": {}
-        }
-        
-        # Perform Disparate Impact Analysis
-        dir_analysis = await self._calculate_disparate_impact(case_data)
-        analysis["analyses"]["disparate_impact"] = dir_analysis
-        
-        # Perform Counterfactual Analysis
-        cf_analysis = await self._perform_counterfactual_analysis(case_data)
-        analysis["analyses"]["counterfactual"] = cf_analysis
-        
-        # Calculate Overall Bias Score
-        bias_score = await self._calculate_bias_score(dir_analysis, cf_analysis)
-        analysis["bias_score"] = bias_score
-        analysis["risk_level"] = self._determine_risk_level(bias_score)
-        
-        # Generate corrected score
-        analysis["corrected_score"] = await self._generate_corrected_score(
-            case_data.get("original_score", 0),
-            bias_score
-        )
-        
-        return analysis
-    
-    async def _calculate_disparate_impact(self, case_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Calculate Disparate Impact Ratio"""
-        # Simulate group statistics
-        group_a_favorable_rate = 0.82  # Assuming high favorable rate
-        group_b_favorable_rate = 0.75  # Assuming lower rate
-        
-        dir_ratio, status = self.bias_calculator.calculate_disparate_impact_ratio(
-            group_a_favorable_rate,
-            group_b_favorable_rate
-        )
-        
-        return {
-            "group_a_favorable_rate": group_a_favorable_rate,
-            "group_b_favorable_rate": group_b_favorable_rate,
-            "disparity_ratio": dir_ratio,
-            "status": status,
-            "eightieth_percentile_rule_compliant": dir_ratio >= 0.8
-        }
-    
-    async def _perform_counterfactual_analysis(self, case_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Perform counterfactual analysis with proxy data flipping"""
-        original_score = case_data.get("original_score", 75)
-        proxy_data = {"zip_code": case_data.get("zip_code", "12345")}
-        
-        # Simulate proxy data flip
-        modified_proxy_data = {"zip_code": "54321"}
-        
-        # Simulate model response
-        def mock_model_scoring(score, proxy):
-            # In reality, this would call the actual model
-            return score - 3 if proxy["zip_code"] == "54321" else score
-        
-        result = self.bias_calculator.counterfactual_audit(
-            original_score,
-            proxy_data,
-            modified_proxy_data,
-            mock_model_scoring
-        )
-        
-        return result
-    
-    async def _calculate_bias_score(
-        self,
-        dir_analysis: Dict[str, Any],
-        cf_analysis: Dict[str, Any]
-    ) -> float:
-        """Calculate comprehensive bias score"""
-        # DIR component
-        dir_ratio = dir_analysis.get("disparity_ratio", 1.0)
-        dir_score = min(40, max(0, (1 - dir_ratio) * 50)) if dir_ratio < 1 else 0
-        
-        # Counterfactual component
-        cf_score = 30 if cf_analysis.get("score_changed") else 0
-        
-        # Statistical parity component (simulated)
-        sp_score = 15
-        
-        total = min(100, dir_score + cf_score + sp_score)
-        return total
-    
-    async def _generate_corrected_score(
-        self,
-        original_score: float,
-        bias_severity: float
-    ) -> float:
-        """Generate bias-corrected score"""
-        adjustment = (bias_severity / 100) * (original_score * 0.5)
-        corrected = original_score - adjustment
-        return max(0, min(100, corrected))
-    
-    def _determine_risk_level(self, bias_score: float) -> str:
-        """Determine risk level"""
-        if bias_score > 70:
-            return "CRITICAL"
-        elif bias_score > 50:
-            return "HIGH"
-        elif bias_score > 30:
-            return "MEDIUM"
-        else:
-            return "LOW"
-    
-    def _get_timestamp(self) -> str:
-        """Get current timestamp"""
-        from datetime import datetime
-        return datetime.now().isoformat()
+  "disparate_impact_ratio": <float>,
+  "dir_status": <string>,
+  "counterfactual_analysis": { "original_score": ..., "modified_score": ..., "score_changed": ..., "bias_indicator": ... },
+  "bias_score": <0-100>,
+  "risk_level": "LOW|MEDIUM|HIGH|CRITICAL",
+  "corrected_score": <float>,
+  "detailed_findings": "<one paragraph summary>"
+}""",
+    tools=[calculate_disparate_impact, run_counterfactual_analysis, compute_bias_score, generate_corrected_score],
+)

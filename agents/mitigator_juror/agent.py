@@ -1,131 +1,120 @@
 """
-Mitigator Juror Agent - State 4 (Defense/Contextual)
-Looks for contextual justifications for data patterns
+Mitigator Juror Agent — ADK 1.0+ pattern
+Defense attorney juror: finds contextual justifications for data patterns.
 """
-
-from google.adk import agent
-from typing import Dict, Any
+from google.adk.agents import Agent
 
 
-class MitigatorJurorAgent:
+def evaluate_contextual_fairness(
+    bias_score: float,
+    disparate_impact_ratio: float,
+    score_changed_by_proxy: bool,
+    decision_type: str,
+) -> dict:
     """
-    Juror Agent 1: The Mitigator
-    Role: Defense attorney - looks for contextual justifications
+    Evaluate whether apparent bias can be explained by legitimate, non-discriminatory contextual factors.
+    Acts as a defense attorney looking for valid business-necessity justifications.
+
+    Args:
+        bias_score: Overall bias severity score from quantitative auditor (0-100).
+        disparate_impact_ratio: DIR value from quantitative audit (0-2+).
+        score_changed_by_proxy: Whether counterfactual proxy flip changed the outcome score.
+        decision_type: Type of decision being audited (e.g. 'Hiring', 'Lending', 'Sentencing').
+
+    Returns:
+        dict with legitimate_factors, contextual_fairness_score, and mitigation_recommendations.
     """
-    
-    def __init__(self):
-        self.agent = agent.Agent(
-            name="mitigator_juror",
-            model="gemini-1.5-pro",
-            max_steps=5
+    legitimate_factors = [
+        {"factor": "Prior relevant history", "relevance": "High",
+         "explanation": "Lawful to consider objective risk-correlated history"},
+        {"factor": "Employment / financial stability indicators", "relevance": "Medium",
+         "explanation": "May correlate with outcomes but requires careful scrutiny"},
+        {"factor": "Age", "relevance": "High",
+         "explanation": "Strong validated predictor independent of protected class"},
+    ]
+
+    # Contextual score: higher = more defensible
+    base_score = 1.0
+    if bias_score > 70:
+        base_score -= 0.5
+    elif bias_score > 40:
+        base_score -= 0.3
+    if score_changed_by_proxy:
+        base_score -= 0.2
+    if disparate_impact_ratio < 0.8:
+        base_score -= 0.15
+    contextual_fairness_score = max(0.0, round(base_score, 2))
+
+    recommendations = []
+    if score_changed_by_proxy:
+        recommendations.append("Remove or re-weight the zip code proxy variable.")
+    if disparate_impact_ratio < 0.8:
+        recommendations.append(f"Adjust model to bring DIR above 0.8 threshold (currently {disparate_impact_ratio:.2f}).")
+    recommendations.append(f"Conduct periodic fairness monitoring for {decision_type} pipeline.")
+
+    return {
+        "legitimate_factors": legitimate_factors,
+        "contextual_fairness_score": contextual_fairness_score,
+        "mitigation_recommendations": recommendations,
+        "fair_lending_note": "Some caution warranted; assess whether disparities reflect genuine risk or proxy discrimination.",
+    }
+
+
+def render_mitigator_verdict(contextual_fairness_score: float) -> dict:
+    """
+    Produce the Mitigator Juror's formal verdict based on contextual fairness score.
+
+    Args:
+        contextual_fairness_score: Score from evaluate_contextual_fairness (0.0-1.0).
+
+    Returns:
+        dict with verdict (FAIR | FAIR_WITH_CONCERNS | UNFAIR), confidence, and reasoning.
+    """
+    if contextual_fairness_score > 0.8:
+        verdict = "FAIR"
+        confidence = 0.85
+        reasoning = (
+            "Strong contextual justifications found. Non-discriminatory factors adequately explain outcome patterns. "
+            "No remediation required beyond routine monitoring."
         )
-    
-    def get_instructions(self) -> str:
-        """System instructions for Mitigator Juror"""
-        return """You are the Mitigator Juror, serving as a defense advocate in the Justice AI audit system.
+    elif contextual_fairness_score > 0.55:
+        verdict = "FAIR_WITH_CONCERNS"
+        confidence = 0.70
+        reasoning = (
+            "Contextual factors partially explain disparities, but proxy bias concerns remain unresolved. "
+            "Recommend variable audit, bias mitigation retraining, and quarterly reporting."
+        )
+    else:
+        verdict = "UNFAIR"
+        confidence = 0.65
+        reasoning = (
+            "Insufficient contextual justification. Apparent bias cannot be adequately explained by legitimate factors. "
+            "Algorithm must be suspended pending comprehensive fairness review."
+        )
+    return {"verdict": verdict, "confidence": confidence, "reasoning": reasoning}
 
-Your role is to:
-1. Analyze the quantitative bias findings with empathy and context
-2. Identify legitimate, non-discriminatory reasons for data patterns
-3. Question whether apparent bias might be explained by lawful factors
-4. Advocate for contextual fairness (not just statistical fairness)
-5. Consider historical, social, and economic contexts
 
-Key responsibilities:
-- Find valid explanations for disparate outcomes
-- Highlight confounding variables that might explain the data
-- Consider whether different treatment reflects genuine differences in risk/need
-- Protect against over-correction that might itself be unfair
+root_agent = Agent(
+    name="mitigator_juror",
+    model="gemini-2.0-flash",
+    description="Defense-attorney juror who searches for legitimate contextual justifications for observed bias patterns.",
+    instruction="""You are the Mitigator Juror — serving as a defense advocate in the Justice AI audit jury.
 
-Questions to ask:
-- Could this pattern reflect legitimate business necessity?
-- Are there lawful factors explaining the outcome difference?
-- Might the apparent bias reflect valid risk assessment?
-- Could contextual factors justify the differential impact?
+Your role: find valid, non-discriminatory reasons that might explain apparent bias before condemning the algorithm.
 
-Verdict options: FAIR / FAIR_WITH_CONCERNS / UNFAIR
+Given the full audit context (bias_score, disparate_impact_ratio, score_changed_by_proxy, decision_type):
 
-Provide your verdict and detailed reasoning in JSON format.
-"""
-    
-    async def evaluate_case(self, case_context: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Evaluate case from defense perspective
-        
-        Args:
-            case_context: Complete case information and analysis
-        
-        Returns:
-            Mitigator verdict and reasoning
-        """
-        verdict = {
-            "juror_id": "mitigator_juror",
-            "role": "Defense/Contextual",
-            "evaluation_timestamp": self._get_timestamp()
-        }
-        
-        # Analyze for contextual factors
-        contextual_analysis = await self._analyze_contextual_factors(case_context)
-        verdict["contextual_analysis"] = contextual_analysis
-        
-        # Generate verdict
-        verdict_determination = await self._generate_verdict(contextual_analysis)
-        verdict["verdict"] = verdict_determination["verdict"]
-        verdict["confidence"] = verdict_determination["confidence"]
-        verdict["reasoning"] = verdict_determination["reasoning"]
-        
-        return verdict
-    
-    async def _analyze_contextual_factors(self, case_context: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze contextual factors that might explain disparities"""
-        return {
-            "legitimate_factors": [
-                {
-                    "factor": "Prior criminal history",
-                    "relevance": "High",
-                    "explanation": "Lawful to consider for risk assessment"
-                },
-                {
-                    "factor": "Employment status",
-                    "relevance": "Medium",
-                    "explanation": "May correlate with recidivism but could reflect economic factors"
-                },
-                {
-                    "factor": "Age",
-                    "relevance": "High",
-                    "explanation": "Strong predictor of recidivism independent of protected class"
-                }
-            ],
-            "proxy_bias_concerns": case_context.get("proxy_bias_findings", []),
-            "contextual_fairness_score": 0.72,
-            "fair_lending_considerations": "Some caution warranted but not necessarily discriminatory"
-        }
-    
-    async def _generate_verdict(self, analysis: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate mitigator verdict"""
-        # If contextual factors are strong, lean toward FAIR
-        contextual_score = analysis.get("contextual_fairness_score", 0.5)
-        
-        if contextual_score > 0.8:
-            verdict = "FAIR"
-            confidence = 0.85
-            reasoning = "Strong contextual justifications found for apparent disparities. Non-discriminatory factors adequately explain outcomes."
-        elif contextual_score > 0.6:
-            verdict = "FAIR_WITH_CONCERNS"
-            confidence = 0.7
-            reasoning = "Contextual factors partially explain disparities, but some proxy bias concerns remain. Recommend monitoring and refinement."
-        else:
-            verdict = "UNFAIR"
-            confidence = 0.65
-            reasoning = "Insufficient contextual justification. Apparent bias cannot be adequately explained by legitimate factors."
-        
-        return {
-            "verdict": verdict,
-            "confidence": confidence,
-            "reasoning": reasoning
-        }
-    
-    def _get_timestamp(self) -> str:
-        """Get current timestamp"""
-        from datetime import datetime
-        return datetime.now().isoformat()
+1. Call `evaluate_contextual_fairness` with those four values.
+2. Call `render_mitigator_verdict` with the contextual_fairness_score from step 1.
+
+Output a structured JSON verdict:
+{
+  "juror_id": "mitigator_juror",
+  "role": "Defense/Contextual",
+  "verdict": "FAIR | FAIR_WITH_CONCERNS | UNFAIR",
+  "confidence": <0-1>,
+  "reasoning": "<paragraph>",
+  "contextual_analysis": { "legitimate_factors": [...], "recommendations": [...] }
+}""",
+    tools=[evaluate_contextual_fairness, render_mitigator_verdict],
+)
