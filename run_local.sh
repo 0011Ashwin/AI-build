@@ -23,13 +23,21 @@ pip install -r requirements.txt
 # Start agents in background
 echo "👥 Starting agents..."
 
-agents=("chief_justice" "quantitative_auditor" "legal_researcher" "mitigator_juror" "strict_auditor_juror" "ethicist_juror")
+# Define agents with their ports
+declare -A agent_ports=(
+    ["chief_justice"]="8081"
+    ["quantitative_auditor"]="8082"
+    ["legal_researcher"]="8083"
+    ["mitigator_juror"]="8084"
+    ["strict_auditor_juror"]="8085"
+    ["ethicist_juror"]="8086"
+)
 
-for agent in "${agents[@]}"
+for agent in "${!agent_ports[@]}"
 do
-    echo "Starting $agent..."
+    echo "Starting $agent on port ${agent_ports[$agent]}..."
     cd agents/$agent
-    python adk_app.py &
+    PORT=${agent_ports[$agent]} python adk_app.py &
     cd ../..
     sleep 2
 done
