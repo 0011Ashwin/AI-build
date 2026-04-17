@@ -2,7 +2,7 @@
 
 # Local development startup script
 
-echo "🚀 Starting Justice AI Workflow (Local Development)"
+echo "🚀 Starting Justice AI (Local Development)"
 echo "=================================================="
 echo ""
 
@@ -24,20 +24,13 @@ pip install -r requirements.txt
 echo "👥 Starting agents..."
 
 # Define agents with their ports
-declare -A agent_ports=(
-    ["chief_justice"]="8081"
-    ["quantitative_auditor"]="8082"
-    ["legal_researcher"]="8083"
-    ["mitigator_juror"]="8084"
-    ["strict_auditor_juror"]="8085"
-    ["ethicist_juror"]="8086"
-)
+agents=("chief_justice" "quantitative_auditor" "legal_researcher" "mitigator_juror" "strict_auditor_juror" "ethicist_juror")
 
-for agent in "${!agent_ports[@]}"
+for agent in "${agents[@]}"
 do
-    echo "Starting $agent on port ${agent_ports[$agent]}..."
+    echo "Starting $agent..."
     cd agents/$agent
-    PORT=${agent_ports[$agent]} python adk_app.py &
+    python adk_app.py &
     cd ../..
     sleep 2
 done
