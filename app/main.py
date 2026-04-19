@@ -413,8 +413,11 @@ async def get_metrics():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+import uvicorn
+
 if __name__ == "__main__":
-    import uvicorn
     port = int(os.environ.get("PORT", 8080))
-    print(f"🚀 Starting Justice AI v2.0 on port {port}")
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
+    debug = os.getenv("DEBUG", "True").lower() == "true"
+    print(f"🚀 Starting Justice AI on http://0.0.0.0:{port}")
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False, debug=debug)
+    
