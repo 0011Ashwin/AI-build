@@ -419,5 +419,5 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     debug = os.getenv("DEBUG", "True").lower() == "true"
     print(f"🚀 Starting Justice AI on http://0.0.0.0:{port}")
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False, debug=debug)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
     
