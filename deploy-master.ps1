@@ -80,7 +80,7 @@ $phases = @{
         Order = 1
     }
     "database" = @{
-        Name = "Setup Database & Storage"
+        Name = "Setup Database and Storage"
         Script = "deploy-02-setup-database.ps1"
         Order = 2
     }
@@ -189,10 +189,10 @@ Write-Info "🎉 All phases executed successfully!"
 Write-Info ""
 
 Write-Success "Summary:"
-Write-Info "  ✓ Phase 1: APIs Enabled (13 services)"
-Write-Info "  ✓ Phase 2: Database Configured (Firestore + Storage)"
-Write-Info "  ✓ Phase 3: Agents Deployed (6 services)"
-Write-Info "  ✓ Phase 4: Application Deployed (1 service)"
+Write-Info "  [OK] Phase 1: APIs Enabled (13 services)"
+Write-Info "  [OK] Phase 2: Database Configured (Firestore + Storage)"
+Write-Info "  [OK] Phase 3: Agents Deployed (6 services)"
+Write-Info "  [OK] Phase 4: Application Deployed (1 service)"
 Write-Info ""
 
 Write-Info "📊 Next Steps:"
