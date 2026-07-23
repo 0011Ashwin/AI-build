@@ -1,5 +1,5 @@
 steps:
-  # Step 1: Build Docker images for all agents
+  # Step 1: Build Docker images for all agents that work 
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
