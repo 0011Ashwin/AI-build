@@ -30,7 +30,7 @@ This guide covers:
 - 🏗️ **Local Development**: Run the entire system with Docker Compose.
 - ☁️ **GCP Deployment**: Step-by-step instructions for Cloud Run & Vertex AI.
 - 🔑 **API Setup**: Commands to enable required Google Cloud Services.
-
+cloud service 
 ---
 
 ## 📊 Key Features
