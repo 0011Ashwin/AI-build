@@ -2,7 +2,7 @@
 
 ### *Fairness-First Algorithmic Auditing System*
 
-A sophisticated multi-agent AI system built to audit algorithmic fairness and detect bias in automated decision-making. Powered by **Gemini Pro** and **Google Cloud Vertex AI**.
+A sophisticated multi-agent AI system built to audit algorithmic fairness and detect bias in automated decision-making. Powered by **Gemini Pro** and **Google Cloud Vertex AI**. AI 
 
 ---
 
