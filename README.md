@@ -19,6 +19,7 @@ The Justice AI Workflow employs a **Multi-Agent Jury** approach to evaluate bias
 - **Ethicist Juror**: Focuses on human impact and SDG alignment.
 
 ---
+system work
 
 ## 🚀 Getting Started
 
