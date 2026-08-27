@@ -8,7 +8,7 @@ A sophisticated multi-agent AI system built to audit algorithmic fairness and de
 
 ## 🏛️ System Architecture
 
-The Justice AI Workflow employs a **Multi-Agent Jury** approach to evaluate bias from multiple ethical and legal perspectives.
+The Justice AI Workflow employs a **Multi-Agent Jury** approach to evaluate bias from multiple ethical and legal perspectives. agent
 
 ### 🎭 The 6-Agent Jury
 - **Chief Justice**: The central orchestrator managing the auditing workflow.
