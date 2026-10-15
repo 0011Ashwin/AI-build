@@ -4,7 +4,7 @@
 
 A sophisticated multi-agent AI system built to audit algorithmic fairness and detect bias in automated decision-making. Powered by **Gemini Pro** and **Google Cloud Vertex AI**. AI and fairness.
 
-----
+-----
 
 ## 🏛️ System Architecture
 
